@@ -14,7 +14,6 @@ from .exception import *
 PackagePath =  dirname(abspath(__file__))
 
 __PLUGIN_NAME = "[B站整合~基础]"
-
 async def createUserFile(userFile: str, nickName: str, streamers: List[str]=[], ups: List[str]=[], telegrams: List[str]=[]):
     '''创建用户/群文件
 
