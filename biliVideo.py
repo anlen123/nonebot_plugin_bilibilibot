@@ -15,8 +15,9 @@ __PLUGIN_NAME = "B站整合~视频"
 BASEURL = 'https://api.bilibili.com/x/space/arc/search?mid={}&ps=30&tid=0&pn=1&keyword=&order=pubdate&jsonp=jsonp'
 USERINFOURL = 'https://api.bilibili.com/x/space/acc/info?mid={}&jsonp=jsonp'
 header = {
-    'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv2.0.1) Gecko/20100101 Firefox/4.0.1'
+    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv2.0.1) Gecko/20100101 Firefox/4.0.1'
 }
+
 
 # 视频
 async def get_latest_video(uid: str, last_udpate_time: int) -> Tuple[bool, str, str, int, str]:
@@ -34,17 +35,17 @@ async def get_latest_video(uid: str, last_udpate_time: int) -> Tuple[bool, str, 
     """
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get(url = BASEURL.format(uid), headers=header)
+            response = await client.get(url=BASEURL.format(uid), headers=header)
     except Exception as e:
         raise BiliConnectionError(f"获取up主<{uid}>的视频列表时发生网络错误:{e.args[0]}")
     if response.status_code != 200:
         raise BiliConnectionError(f"获取视频列表时连接出错:状态码={response.status_code}")
 
     response = json.loads(response.text)
-    #assert len(response['data']['list']['vlist']) != 0, '用户{}无发布视频'.format(uid)
+    # assert len(response['data']['list']['vlist']) != 0, '用户{}无发布视频'.format(uid)
     latest_video = response['data']['list']['vlist'][0] if len(response['data']['list']['vlist']) != 0 else 0
     post_time = int(latest_video['created']) if len(response['data']['list']['vlist']) else 0
-    
+
     if post_time > last_udpate_time:
         # 发现新视频
         title = latest_video['title']
@@ -52,6 +53,7 @@ async def get_latest_video(uid: str, last_udpate_time: int) -> Tuple[bool, str, 
         cover_url = latest_video['pic']
         return (True, bvID, title, post_time, cover_url)
     return (False, '', '', 0, '')
+
 
 async def check_up_update() -> None:
     """
@@ -66,27 +68,28 @@ async def check_up_update() -> None:
     try:
         up_list = bili_database.query_all(0)
         schedBot = nonebot.get_bot()
-        #assert status == True, "数据库发生错误"
+        # assert status == True, "数据库发生错误"
         for up_uid, up_name, latest_timestamp in up_list:
             res = await get_latest_video(up_uid, latest_timestamp)
 
             if res[0]:
                 logger.info(f'{__PLUGIN_NAME}检测到up主<{up_name}>更新了视频')
                 textMsg = f"【B站动态】\n <{up_name}> 更新了视频\n标题: {res[2]}\n链接: https://www.bilibili.com/video/{res[1]}"
-                
+
                 user_list = bili_database.query_user_relation(0, up_uid)
                 for user_id in user_list:
                     await schedBot.send_msg(message=textMsg + MessageSegment.image(res[4]), user_id=user_id[0])
-                
+
                 group_list = bili_database.query_group_relation(0, up_uid)
                 for group_id in group_list:
                     await schedBot.send_msg(message=textMsg + MessageSegment.image(res[4]), group_id=group_id[0])
-                
+
                 bili_database.update_info(0, up_uid, res[3])
     except Exception as _:
         ex_type, ex_val, _ = sys.exc_info()
         exception_msg = f'【错误报告】\n检测up主<{up_name}>更新状况时发生错误\n错误类型: {ex_type}\n错误值: {ex_val}\n'
         logger.error(f"{__PLUGIN_NAME}" + exception_msg + traceback.format_exc())
+
 
 async def init_up_info(uid: str) -> Tuple[str, int]:
     """
@@ -108,7 +111,7 @@ async def init_up_info(uid: str) -> Tuple[str, int]:
         raise BiliConnectionError(f"获取up主<{uid}>的信息时发生网络错误:{e.args[0]}")
     if response.status_code != 200:
         raise BiliConnectionError(f"获取up主<{uid}>的信息时连接出错:状态码={response.status_code}")
-    
+
     response = json.loads(response.text)
     if response['code'] == 0:
         user_name = response['data']['name']
@@ -116,6 +119,7 @@ async def init_up_info(uid: str) -> Tuple[str, int]:
         return (user_name, res[3])
     else:
         return ('', '')
+
 
 async def follow_up(uid: str, user_id: str, user_type: int) -> Tuple[bool, str]:
     '''根据用户或群关注up，修改数据库
@@ -128,15 +132,16 @@ async def follow_up(uid: str, user_id: str, user_type: int) -> Tuple[bool, str]:
     Returns:
         Tuple[bool, str]: [是否成功，信息]
     '''
-    
+
     # 处理参数错误
+    uid = str(int(uid))
     if not uid.isdigit():
         logger.error(f'{__PLUGIN_NAME}存在错误参数<{uid}>')
         return (False, uid + "(错误参数)")
-    
+
     try:
         result = bili_database.query_info(2, uid)
-        
+
         # up信息不存在于数据库,对数据库进行更新
         if not result:
             up_name, latest_timestamp = await init_up_info(uid)
@@ -151,11 +156,11 @@ async def follow_up(uid: str, user_id: str, user_type: int) -> Tuple[bool, str]:
                 return (False, uid + "(uid错误)")
         # 处理已关注
         result1 = bili_database.query_specified_realtion(0 + user_type, user_id, uid)
-        
+
         if result1:
             logger.info(f"{__PLUGIN_NAME}用户/群 <{user_id}> 已经关注了up <{result[1]}>")
             return (False, result[1] + "(已关注)")
-    
+
         # 进行关注
         bili_database.insert_relation(0 + user_type, uid, user_id)
         logger.info(f"{__PLUGIN_NAME}用户/群 <{user_id}> 关注up <{result[1]}> 成功")
@@ -176,6 +181,7 @@ async def follow_up(uid: str, user_id: str, user_type: int) -> Tuple[bool, str]:
         logger.error(f"{__PLUGIN_NAME}" + exception_msg + traceback.format_exc())
         return (False, uid + "(未知错误,请查看日志)")
 
+
 async def unfollow_up(uid: str, user_id: str, user_type: int) -> Tuple[bool, str]:
     '''根据个人用户或群取关up主，修改up文件
 
@@ -187,34 +193,35 @@ async def unfollow_up(uid: str, user_id: str, user_type: int) -> Tuple[bool, str
     Returns:
         Tuple[bool, str]: [是否成功，信息]
     '''
-    
+
     # 处理参数错误
     if not uid.isdigit():
         logger.error(f'{__PLUGIN_NAME}存在错误参数 <{uid}>')
         return (False, uid + "(错误参数)")
     try:
-    # 处理未关注
+        # 处理未关注
         result = bili_database.query_specified_realtion(0 + user_type, user_id, uid)
         if not result:
             logger.info(f'{__PLUGIN_NAME}用户/群 <{user_id}> 未关注up <{uid}>')
             return (False, uid + "(未关注)")
-        
+
         # 进行取关
         bili_database.delete_relation(0 + user_type, user_id, uid)
         logger.info(f'{__PLUGIN_NAME}用户/群 <{user_id}> 取关up <{uid}> 成功')
 
-        return (True, bili_database.query_info(2, uid)[1]  + f"(uid: {uid})") 
+        return (True, bili_database.query_info(2, uid)[1] + f"(uid: {uid})")
     except BiliDatebaseError:
         ex_type, ex_val, _ = sys.exc_info()
         exception_msg = f'【错误报告】\n取关up主 <{uid}> 时数据库发生错误\n错误类型: {ex_type}\n错误值: {ex_val}\n'
         logger.error(f"{__PLUGIN_NAME}" + exception_msg + traceback.format_exc())
         return (False, uid + "(数据库错误)")
 
+
 async def follow_up_list(
-    user_id: int, 
-    uidList: List[str], 
-    user_type: int
-    ) -> List[List[str]]:
+        user_id: int,
+        uidList: List[str],
+        user_type: int
+) -> List[List[str]]:
     '''个人用户/群关注up主
 
     Args:
@@ -237,11 +244,12 @@ async def follow_up_list(
 
     return [successList, failList]
 
+
 async def unfollow_up_list(
-    user_id: int, 
-    uidList: List[str],
-    user_type: int
-    ) -> List[List[str]]:
+        user_id: int,
+        uidList: List[str],
+        user_type: int
+) -> List[List[str]]:
     '''个人用户/群取关up主
 
     Args:
@@ -261,5 +269,5 @@ async def unfollow_up_list(
             successList.append(s)
         else:
             failList.append(s)
-    
+
     return [successList, failList]

@@ -11,10 +11,14 @@ from os.path import abspath, dirname
 from nonebot.adapters.onebot.v11.event import GroupMessageEvent, PrivateMessageEvent
 from .db import bili_database
 from .exception import *
-PackagePath =  dirname(abspath(__file__))
+
+PackagePath = dirname(abspath(__file__))
 
 __PLUGIN_NAME = "[B站整合~基础]"
-async def createUserFile(userFile: str, nickName: str, streamers: List[str]=[], ups: List[str]=[], telegrams: List[str]=[]):
+
+
+async def createUserFile(userFile: str, nickName: str, streamers: List[str] = [], ups: List[str] = [],
+                         telegrams: List[str] = []):
     '''创建用户/群文件
 
     Args:
@@ -24,13 +28,14 @@ async def createUserFile(userFile: str, nickName: str, streamers: List[str]=[], 
         ups (List[str], optional): 关注的up主. Defaults to [].
         telegrams (List[str], optional): 关注的番剧. Defaults to [].
     '''
-    
+
     with open(userFile, 'w+', encoding='utf-8') as f:
-            logger.debug(f'{__PLUGIN_NAME}群名为{nickName}')
-            
-            userInfo = [nickName, streamers, ups, telegrams]
-            json.dump(userInfo, f, ensure_ascii=False)
+        logger.debug(f'{__PLUGIN_NAME}群名为{nickName}')
+
+        userInfo = [nickName, streamers, ups, telegrams]
+        json.dump(userInfo, f, ensure_ascii=False)
     logger.debug(f'{__PLUGIN_NAME}用户文件{userFile}创建成功')
+
 
 async def FollowModifyUserFile(userFile: str, successList: List[str], type: int):
     """
@@ -55,6 +60,7 @@ async def FollowModifyUserFile(userFile: str, successList: List[str], type: int)
         json.dump(userInfo, f, ensure_ascii=False)
         logger.debug(f'{__PLUGIN_NAME}用户{userInfo[0]}文件更新成功')
 
+
 async def UnfollowModifyUserFile(userFile: str, successList: List[str], type: int):
     """
     @description  :
@@ -72,10 +78,11 @@ async def UnfollowModifyUserFile(userFile: str, successList: List[str], type: in
     with open(userFile, "r+", encoding='utf-8') as f:
         userInfo = json.load(f)
         userInfo[type] = list(set(userInfo[type]) - set(successList))
-            # [nickname, [streamer], [up], [telegrams]]
+        # [nickname, [streamer], [up], [telegrams]]
         f.seek(0)
         f.truncate()
         json.dump(userInfo, f, ensure_ascii=False)
+
 
 async def parseB23Url(url: str) -> Tuple[bool, int, str]:
     """
@@ -90,7 +97,7 @@ async def parseB23Url(url: str) -> Tuple[bool, int, str]:
     [isSuccess, type, id]
     type: 1-直播房间号;2-up主uid;3-节目的epid
     -------
-    """ 
+    """
     API = 'https://duanwangzhihuanyuan.bmcx.com/web_system/bmcx_com_www/system/file/duanwangzhihuanyuan/get/?ajaxtimestamp=1646565831920'
     payload = {'turl': url}
     try:
@@ -116,8 +123,9 @@ async def parseB23Url(url: str) -> Tuple[bool, int, str]:
         epid = epid.group()
         logger.debug(f'{__PLUGIN_NAME}短链接{url}是番剧播放页面,epid为{"ep" + epid[32:]}')
         return (True, 3, "ep" + epid[32:])
-    
+
     return (False, 0, '')
+
 
 def GetAllUser() -> List[str]:
     """
@@ -133,6 +141,7 @@ def GetAllUser() -> List[str]:
     """
     qq_users = bili_database.query_all(3)
     return [i[0] for i in qq_users]
+
 
 def GetAllGroup() -> List[str]:
     """
@@ -150,6 +159,7 @@ def GetAllGroup() -> List[str]:
     qq_groups = bili_database.query_all(4)
     return [i[0] for i in qq_groups]
 
+
 async def SendMsgToUsers(msg: str, users: List[str]):
     """
     @description  :
@@ -163,11 +173,12 @@ async def SendMsgToUsers(msg: str, users: List[str]):
     无
     -------
     """
-    
+
     bot = get_bot()
     for user in users:
-        await bot.send_msg(message=msg, user_id = user)
-    
+        await bot.send_msg(message=msg, user_id=user)
+
+
 async def SendMsgToGroups(msg: str, groups: List[str]):
     '''向所有群组发送公告
 
@@ -175,10 +186,11 @@ async def SendMsgToGroups(msg: str, groups: List[str]):
         msg (str): 公告内容
         groups (List[str]): 群组列表
     '''
-    
+
     bot = get_bot()
     for group in groups:
-        await bot.send_msg(message=msg, group_id = group)
+        await bot.send_msg(message=msg, group_id=group)
+
 
 async def create_user(event: Union[PrivateMessageEvent, GroupMessageEvent]) -> None:
     '''接受消息后,创建用户
@@ -200,9 +212,9 @@ async def create_user(event: Union[PrivateMessageEvent, GroupMessageEvent]) -> N
                 name = group_info["group_name"]
             bili_database.insert_info(user_type, user_id, name)
     except Exception as _:
-            ex_type, ex_val, _ = sys.exc_info()
-            exception_msg = '【错误报告】\n创建用户时发生错误\n错误类型: {}\n错误值: {}\n'.format(ex_type, ex_val)
-            logger.error(f"{__PLUGIN_NAME}\n" + exception_msg + traceback.format_exc())
+        ex_type, ex_val, _ = sys.exc_info()
+        exception_msg = '【错误报告】\n创建用户时发生错误\n错误类型: {}\n错误值: {}\n'.format(ex_type, ex_val)
+        logger.error(f"{__PLUGIN_NAME}\n" + exception_msg + traceback.format_exc())
 
 
 def CheckDir():
@@ -217,30 +229,29 @@ def CheckDir():
     
     -------
     """
-    
+
     baseDir = f'{PackagePath}/file/'
 
     if not os.path.exists(baseDir + 'source'):
         logger.debug(f'{__PLUGIN_NAME}source文件夹不存在')
         os.makedirs(baseDir + 'source')
-        
+
     if not os.path.exists(baseDir + 'stream'):
         logger.debug(f'{__PLUGIN_NAME}stream文件夹不存在')
         os.makedirs(baseDir + 'stream')
-    
+
     if not os.path.exists(baseDir + 'telegram'):
         logger.debug(f'{__PLUGIN_NAME}telegram文件夹不存在')
         os.makedirs(baseDir + 'telegram')
-    
+
     if not os.path.exists(baseDir + 'up'):
         logger.debug(f'{__PLUGIN_NAME}up文件夹不存在')
         os.makedirs(baseDir + 'up')
-        
+
     if not os.path.exists(baseDir + 'user'):
         logger.debug(f'{__PLUGIN_NAME}user文件夹不存在')
         os.makedirs(baseDir + 'user')
-    
+
     if not os.path.exists(baseDir + 'group'):
         logger.debug(f'{__PLUGIN_NAME}group文件夹不存在')
         os.makedirs(baseDir + 'group')
-
