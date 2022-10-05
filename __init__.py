@@ -39,7 +39,7 @@ async def follow_liver_command_handler(event: Union[PrivateMessageEvent, GroupMe
         success_list, fail_list = await follow_liver_list(event.group_id, uid_list, 1)
     await follow_liver_command.finish(f"关注成功:\n{success_list}\n关注失败:\n{fail_list}")
 
-unfollow_liver_command = on_command("取关主播", aliases={"切割主播"}, permission=ALL_PERMISSION)
+unfollow_liver_command = on_command("取关主播", aliases={"取关主播"}, permission=ALL_PERMISSION)
 @unfollow_liver_command.handle()
 async def unfollow_liver_command_handler(event: Union[PrivateMessageEvent, GroupMessageEvent], args: Message = CommandArg()):
     uid_list = args.extract_plain_text().split()
@@ -50,7 +50,7 @@ async def unfollow_liver_command_handler(event: Union[PrivateMessageEvent, Group
         success_list, fail_list = await unfollow_liver_list(event.group_id, uid_list, 1)
     await unfollow_liver_command.finish(f"取关成功:\n{success_list}\n取关失败:\n{fail_list}")
 
-listFollowingCommand = on_command("查询关注", aliases={"查询成分"}, permission=ALL_PERMISSION)
+listFollowingCommand = on_command("查询关注", aliases={"查询主播"}, permission=ALL_PERMISSION)
 @listFollowingCommand.handle()
 async def listFollowingCommandHandler(event: Union[PrivateMessageEvent, GroupMessageEvent], args: Message = CommandArg()):
     await create_user(event)
