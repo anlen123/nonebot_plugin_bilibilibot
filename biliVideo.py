@@ -193,7 +193,7 @@ async def unfollow_up(uid: str, user_id: str, user_type: int) -> Tuple[bool, str
     Returns:
         Tuple[bool, str]: [是否成功，信息]
     '''
-
+    uid = str(int(uid))
     # 处理参数错误
     if not uid.isdigit():
         logger.error(f'{__PLUGIN_NAME}存在错误参数 <{uid}>')

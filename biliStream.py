@@ -166,6 +166,7 @@ async def follow_liver(uid: str, user_id: str, user_type: int) -> Tuple[bool, st
     Returns:
         Tuple[bool, str]: [是否成功，主播名(uid) | 主播uid(失败原因)]
     '''
+    uid = str(int(uid))
     
     if not uid.isdigit():
         logger.error(f'{__PLUGIN_NAME}存在错误参数 <{uid}>')
@@ -224,6 +225,7 @@ async def unfollower_liver(uid: str, user_id: str, user_type: int) -> Tuple[bool
     Returns:
         Tuple[bool, str]: [是否成功，主播名 | 失败原因]
     '''
+    uid = str(int(uid))
     if not uid.isdigit():
         logger.error(f'{__PLUGIN_NAME}存在错误参数 <{uid}>')
         return (False, uid + "(错误参数)")
